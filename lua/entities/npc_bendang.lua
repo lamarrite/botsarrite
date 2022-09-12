@@ -6,12 +6,12 @@ ENT.Base = "base_nextbot"
 ENT.PhysgunDisabled = true
 ENT.AutomaticFrameAdvance = false
 
-ENT.JumpSound = Sound("npc_sayyid/jump.mp3")
-ENT.JumpHighSound = Sound("npc_sayyid/jump.mp3")
+ENT.JumpSound = Sound("npc_bendang/jump.mp3")
+ENT.JumpHighSound = Sound("npc_bendang/jump.mp3")
 ENT.TauntSounds = {
-	Sound("npc_sayyid/taunt.mp3"),
+	Sound("npc_bendang/taunt.mp3"),
 }
-local chaseMusic = Sound("npc_sayyid/panic.mp3")
+local chaseMusic = Sound("npc_bendang/panic.mp3")
 
 local workshopID = "174117071"
 
@@ -19,74 +19,74 @@ local IsValid = IsValid
 
 if SERVER then -- SERVER --
 
-local npc_sayyid_acquire_distance =
-	CreateConVar("npc_sayyid_acquire_distance", 25000, FCVAR_NONE,
-	"The maximum distance at which sayyid will chase a target.")
+local npc_bendang_acquire_distance =
+	CreateConVar("npc_bendang_acquire_distance", 2500, FCVAR_NONE,
+	"The maximum distance at which bendang will chase a target.")
 
-local npc_sayyid_spawn_protect =
-	CreateConVar("npc_sayyid_spawn_protect", 0, FCVAR_NONE,
-	"If set to 1, sayyid will not target players or hide within 200 units of \z
+local npc_bendang_spawn_protect =
+	CreateConVar("npc_bendang_spawn_protect", 1, FCVAR_NONE,
+	"If set to 1, bendang will not target players or hide within 200 units of \z
 	a spawn point.")
 
-local npc_sayyid_attack_distance =
-	CreateConVar("npc_sayyid_attack_distance", 70, FCVAR_NONE,
-	"The reach of sayyid's attack.")
+local npc_bendang_attack_distance =
+	CreateConVar("npc_bendang_attack_distance", 70, FCVAR_NONE,
+	"The reach of bendang's attack.")
 
-local npc_sayyid_attack_interval =
-	CreateConVar("npc_sayyid_attack_interval", 0.1, FCVAR_NONE,
-	"The delay between sayyid's attacks.")
+local npc_bendang_attack_interval =
+	CreateConVar("npc_bendang_attack_interval", 0.2, FCVAR_NONE,
+	"The delay between bendang's attacks.")
 
-local npc_sayyid_attack_force =
-	CreateConVar("npc_sayyid_attack_force", 12000, FCVAR_NONE,
-	"The physical force of sayyid's attack. Higher values throw things \z
+local npc_bendang_attack_force =
+	CreateConVar("npc_bendang_attack_force", 1200, FCVAR_NONE,
+	"The physical force of bendang's attack. Higher values throw things \z
 	farther.")
 
-local npc_sayyid_smash_props =
-	CreateConVar("npc_sayyid_smash_props", 1, FCVAR_NONE,
-	"If set to 1, sayyid will punch through any props placed in their way.")
+local npc_bendang_smash_props =
+	CreateConVar("npc_bendang_smash_props", 1, FCVAR_NONE,
+	"If set to 1, bendang will punch through any props placed in their way.")
 
-local npc_sayyid_allow_jump =
-	CreateConVar("npc_sayyid_allow_jump", 1, FCVAR_NONE,
-	"If set to 1, sayyid will be able to jump.")
+local npc_bendang_allow_jump =
+	CreateConVar("npc_bendang_allow_jump", 1, FCVAR_NONE,
+	"If set to 1, bendang will be able to jump.")
 
-local npc_sayyid_hiding_scan_interval =
-	CreateConVar("npc_sayyid_hiding_scan_interval", 99999, FCVAR_NONE,
-	"sayyid will only seek out hiding places every X seconds. This can be an \z
+local npc_bendang_hiding_scan_interval =
+	CreateConVar("npc_bendang_hiding_scan_interval", 3, FCVAR_NONE,
+	"bendang will only seek out hiding places every X seconds. This can be an \z
 	expensive operation, so it is not recommended to lower this too much. \z
-	However, if distant sayyids are not hiding from you quickly enough, you \z
+	However, if distant bendangs are not hiding from you quickly enough, you \z
 	may consider lowering this a small amount.")
 
-local npc_sayyid_hiding_repath_interval =
-	CreateConVar("npc_sayyid_hiding_repath_interval", 99999, FCVAR_NONE,
-	"The path to sayyid's hiding spot will be redetermined every X seconds.")
+local npc_bendang_hiding_repath_interval =
+	CreateConVar("npc_bendang_hiding_repath_interval", 1, FCVAR_NONE,
+	"The path to bendang's hiding spot will be redetermined every X seconds.")
 
-local npc_sayyid_chase_repath_interval =
-	CreateConVar("npc_sayyid_chase_repath_interval", 0.1, FCVAR_NONE,
-	"The path to and position of sayyid's target will be redetermined every \z
+local npc_bendang_chase_repath_interval =
+	CreateConVar("npc_bendang_chase_repath_interval", 0.1, FCVAR_NONE,
+	"The path to and position of bendang's target will be redetermined every \z
 	X seconds.")
 
-local npc_sayyid_expensive_scan_interval =
-	CreateConVar("npc_sayyid_expensive_scan_interval", 0.1, FCVAR_NONE,
+local npc_bendang_expensive_scan_interval =
+	CreateConVar("npc_bendang_expensive_scan_interval", 1, FCVAR_NONE,
 	"Slightly expensive operations (distance calculations and entity \z
 	searching) will occur every X seconds.")
 
-local npc_sayyid_force_download =
-	CreateConVar("npc_sayyid_force_download", 1, FCVAR_ARCHIVE,
-	"If set to 1, clients will be forced to download sayyid resources \z
+local npc_bendang_force_download =
+	CreateConVar("npc_bendang_force_download", 1, FCVAR_ARCHIVE,
+	"If set to 1, clients will be forced to download bendang resources \z
 	(restart required after changing).\n\z
 	WARNING: If this option is disabled, clients will be unable to see or \z
-	hear sayyid!")
+	hear bendang!")
 
  -- So we don't spam voice TOO much.
-local TAUNT_INTERVAL = 0
+local TAUNT_INTERVAL = 1.2
 local PATH_INFRACTION_TIMEOUT = 5
 
-if npc_sayyid_force_download:GetBool() then
+if npc_bendang_force_download:GetBool() then
 	resource.AddWorkshop(workshopID)
 end
 
-util.AddNetworkString("sayyid_nag")
-util.AddNetworkString("sayyid_navgen")
+util.AddNetworkString("bendang_nag")
+util.AddNetworkString("bendang_navgen")
 
  -- Pathfinding is only concerned with static geometry anyway.
 local trace = {
@@ -120,10 +120,10 @@ local function isPositionExposed(pos)
 	return false
 end
 
-local VECTOR_sayyid_HEIGHT = Vector(0, 0, 96)
+local VECTOR_bendang_HEIGHT = Vector(0, 0, 96)
 local function isPointSuitableForHiding(point)
 	trace.start = point
-	trace.endpos = point + VECTOR_sayyid_HEIGHT
+	trace.endpos = point + VECTOR_bendang_HEIGHT
 	local tr = util.TraceLine(trace)
 
 	return (not tr.Hit)
@@ -144,7 +144,7 @@ local function buildHidingSpotCache()
 			if isPointSuitableForHiding(hidingSpot) then
 				g_hidingSpots[goodSpots + 1] = {
 					pos = hidingSpot,
-					nearSpawn = isPointNearSpawn(hidingSpot, 1),
+					nearSpawn = isPointNearSpawn(hidingSpot, 200),
 					occupant = nil
 				}
 				goodSpots = goodSpots + 1
@@ -154,7 +154,7 @@ local function buildHidingSpotCache()
 		end
 	end
 
-	print(string.format("npc_sayyid: found %d suitable (%d unsuitable) hiding \z
+	print(string.format("npc_bendang: found %d suitable (%d unsuitable) hiding \z
 		places in %d areas over %.2fms!", goodSpots, badSpots, #areas,
 		(SysTime() - rStart) * 1000))
 end
@@ -170,21 +170,21 @@ local function isValidTarget(ent)
 		return ent:Alive()
 	end
 
-	-- Ignore dead NPCs, other sayyids, and dummy NPCs.
+	-- Ignore dead NPCs, other bendangs, and dummy NPCs.
 	local class = ent:GetClass()
 	return (ent:IsNPC()
 		and ent:Health() > 0
-		and class ~= "npc_sayyid"
+		and class ~= "npc_bendang"
 		and not class:find("bullseye"))
 end
 
-hook.Add("PlayerSpawnedNPC", "sayyidMissingNavmeshNag", function(ply, ent)
+hook.Add("PlayerSpawnedNPC", "bendangMissingNavmeshNag", function(ply, ent)
 	if not IsValid(ent) then return end
-	if ent:GetClass() ~= "npc_sayyid" then return end
+	if ent:GetClass() ~= "npc_bendang" then return end
 	if navmesh.GetNavAreaCount() > 0 then return end
 
-	-- Try to explain why sayyid isn't working.
-	net.Start("sayyid_nag")
+	-- Try to explain why bendang isn't working.
+	net.Start("bendang_nag")
 	net.Send(ply)
 end)
 
@@ -193,9 +193,9 @@ local function navEndGenerate()
 	local timeElapsedStr = string.NiceTime(SysTime() - generateStart)
 
 	if not navmesh.IsGenerating() then
-		print("npc_sayyid: Navmesh generation completed in " .. timeElapsedStr)
+		print("npc_bendang: Navmesh generation completed in " .. timeElapsedStr)
 	else
-		print("npc_sayyid: Navmesh generation aborted after " .. timeElapsedStr)
+		print("npc_bendang: Navmesh generation aborted after " .. timeElapsedStr)
 	end
 
 	-- Turn this back off.
@@ -282,7 +282,7 @@ local function navGenerate()
 	addEntitiesToSet(seeds, GAMEMODE.SpawnPoints or {})
 
 	if next(seeds, nil) == nil then
-		print("npc_sayyid: Couldn't find any places to seed nav_generate")
+		print("npc_bendang: Couldn't find any places to seed nav_generate")
 		return false
 	end
 
@@ -298,17 +298,17 @@ local function navGenerate()
 		local tr = util.TraceLine(trace)
 
 		if not tr.StartSolid and tr.Hit then
-			print(string.format("npc_sayyid: Adding seed %s at %s", seed, pos))
+			print(string.format("npc_bendang: Adding seed %s at %s", seed, pos))
 			navmesh.AddWalkableSeed(tr.HitPos, tr.HitNormal)
 		else
-			print(string.format("npc_sayyid: Couldn't add seed %s at %s", seed,
+			print(string.format("npc_bendang: Couldn't add seed %s at %s", seed,
 				pos))
 		end
 	end
 
 	-- The least we can do is ensure they don't have to listen to this noise.
-	for _, sayyid in pairs(ents.FindByClass("npc_sayyid")) do
-		sayyid:Remove()
+	for _, bendang in pairs(ents.FindByClass("npc_bendang")) do
+		bendang:Remove()
 	end
 
 	-- This isn't strictly necessary since we just added EVERY spawnpoint as a
@@ -319,16 +319,16 @@ local function navGenerate()
 
 	if navmesh.IsGenerating() then
 		generateStart = SysTime()
-		hook.Add("ShutDown", "sayyidNavGen", navEndGenerate)
+		hook.Add("ShutDown", "bendangNavGen", navEndGenerate)
 	else
-		print("npc_sayyid: nav_generate failed to initialize")
+		print("npc_bendang: nav_generate failed to initialize")
 		navmesh.ClearWalkableSeeds()
 	end
 
 	return navmesh.IsGenerating()
 end
 
-concommand.Add("npc_sayyid_learn", function(ply, cmd, args)
+concommand.Add("npc_bendang_learn", function(ply, cmd, args)
 	if navmesh.IsGenerating() then
 		return
 	end
@@ -336,9 +336,9 @@ concommand.Add("npc_sayyid_learn", function(ply, cmd, args)
 	-- Rcon or single-player only.
 	local isConsole = (ply:EntIndex() == 0)
 	if game.SinglePlayer() then
-		print("npc_sayyid: Beginning nav_generate requested by " .. ply:Name())
+		print("npc_bendang: Beginning nav_generate requested by " .. ply:Name())
 
-		-- Disable expensive computations in single-player. sayyid doesn't use
+		-- Disable expensive computations in single-player. bendang doesn't use
 		-- their results, and it consumes a massive amount of time and CPU.
 		-- We'd do this on dedicated servers as well, except that sv_cheats
 		-- needs to be enabled in order to disable visibility computations.
@@ -348,7 +348,7 @@ concommand.Add("npc_sayyid_learn", function(ply, cmd, args)
 		-- Enable developer mode so we can see console messages in the corner.
 		RunConsoleCommand("developer", "1")
 	elseif isConsole then
-		print("npc_sayyid: Beginning nav_generate requested by server console")
+		print("npc_bendang: Beginning nav_generate requested by server console")
 	else
 		return
 	end
@@ -358,7 +358,7 @@ concommand.Add("npc_sayyid_learn", function(ply, cmd, args)
 	-- If it fails, only the person who started it needs to know.
 	local recipients = (success and player.GetHumans() or {ply})
 
-	net.Start("sayyid_navgen")
+	net.Start("bendang_navgen")
 		net.WriteBool(success)
 	net.Send(recipients)
 end)
@@ -403,7 +403,7 @@ function ENT:Initialize()
 	self.loco:SetDeceleration(500)
 
 	-- This isn't really important because we reset it all the time anyway.
-	self.loco:SetJumpHeight(1000)
+	self.loco:SetJumpHeight(300)
 
 	-- Rebuild caches.
 	self:OnReloaded()
@@ -427,7 +427,7 @@ end
 
 function ENT:GetNearestTarget()
 	-- Only target entities within the acquire distance.
-	local maxAcquireDist = npc_sayyid_acquire_distance:GetInt()
+	local maxAcquireDist = npc_bendang_acquire_distance:GetInt()
 	local maxAcquireDistSqr = maxAcquireDist * maxAcquireDist
 	local myPos = self:GetPos()
 	local acquirableEntities = ents.FindInSphere(myPos, maxAcquireDist)
@@ -441,9 +441,9 @@ function ENT:GetNearestTarget()
 		if not isValidTarget(ent) then continue end
 
 		-- Spawn protection! Ignore players within 200 units of a spawn point
-		-- if `npc_sayyid_spawn_protect' = 1.
+		-- if `npc_bendang_spawn_protect' = 1.
 		--TODO: Only for the first few seconds?
-		if npc_sayyid_spawn_protect:GetBool() and ent:IsPlayer()
+		if npc_bendang_spawn_protect:GetBool() and ent:IsPlayer()
 			and isPointNearSpawn(ent:GetPos(), 200)
 		then
 			continue
@@ -462,7 +462,7 @@ end
 
 --TODO: Giant ugly monolith of a function eww eww eww.
 function ENT:AttackNearbyTargets(radius)
-	local attackForce = npc_sayyid_attack_force:GetInt()
+	local attackForce = npc_bendang_attack_force:GetInt()
 	local hitSource = self:LocalToWorld(self:OBBCenter())
 	local nearEntities = ents.FindInSphere(hitSource, radius)
 	local hit = false
@@ -499,7 +499,7 @@ function ENT:AttackNearbyTargets(radius)
 			end
 
 			local hitDirection = (ent:GetPos() - hitSource):GetNormal()
-			-- Give the player a good whack. sayyid means business.
+			-- Give the player a good whack. bendang means business.
 			-- This is for those with god mode enabled.
 			ent:SetVelocity(hitDirection * attackForce + vector_up * 500)
 
@@ -517,7 +517,7 @@ function ENT:AttackNearbyTargets(radius)
 			-- Hits only count if we dealt some damage.
 			hit = (hit or (newHealth < health))
 		elseif ent:GetMoveType() == MOVETYPE_VPHYSICS then
-			if not npc_sayyid_smash_props:GetBool() then continue end
+			if not npc_bendang_smash_props:GetBool() then continue end
 			if ent:IsVehicle() and IsValid(ent:GetDriver()) then continue end
 
 			-- Knock away any props put in our path.
@@ -620,7 +620,7 @@ function ENT:ClaimHidingSpot(hidingSpot)
 	return true
 end
 
-local HIGH_JUMP_HEIGHT = 1000
+local HIGH_JUMP_HEIGHT = 500
 function ENT:AttemptJumpAtTarget()
 	-- No double-jumping.
 	if not self:IsOnGround() then return end
@@ -628,15 +628,15 @@ function ENT:AttemptJumpAtTarget()
 	local targetPos = self.CurrentTarget:GetPos()
 	local xyDistSqr = (targetPos - self:GetPos()):Length2DSqr()
 	local zDifference = targetPos.z - self:GetPos().z
-	local maxAttackDistance = npc_sayyid_attack_distance:GetInt()
+	local maxAttackDistance = npc_bendang_attack_distance:GetInt()
 	if xyDistSqr <= math.pow(maxAttackDistance + 200, 2)
 		and zDifference >= maxAttackDistance
 	then
 		--TODO: Set up jump so target lands on parabola.
-		local jumpHeight = zDifference + 100
+		local jumpHeight = zDifference + 50
 		self.loco:SetJumpHeight(jumpHeight)
 		self.loco:Jump()
-		self.loco:SetJumpHeight(1000)
+		self.loco:SetJumpHeight(300)
 
 		self:EmitSound((jumpHeight > HIGH_JUMP_HEIGHT and
 			self.JumpHighSound or self.JumpSound), 350, 100)
@@ -690,7 +690,7 @@ function ENT:BehaveUpdate() --TODO: Split this up more. Eww.
 
 	local currentTime = CurTime()
 
-	local scanInterval = npc_sayyid_expensive_scan_interval:GetFloat()
+	local scanInterval = npc_bendang_expensive_scan_interval:GetFloat()
 	if currentTime - self.LastTargetSearch > scanInterval then
 		local target = self:GetNearestTarget()
 
@@ -709,9 +709,9 @@ function ENT:BehaveUpdate() --TODO: Split this up more. Eww.
 		self.LastHidingPlaceScan = 0
 
 		-- Attack anyone nearby while we're rampaging.
-		local attackInterval = npc_sayyid_attack_interval:GetFloat()
+		local attackInterval = npc_bendang_attack_interval:GetFloat()
 		if currentTime - self.LastAttack > attackInterval then
-			local attackDistance = npc_sayyid_attack_distance:GetInt()
+			local attackDistance = npc_bendang_attack_distance:GetInt()
 			if self:AttackNearbyTargets(attackDistance) then
 				if currentTime - self.LastTaunt > TAUNT_INTERVAL then
 					self.LastTaunt = currentTime
@@ -726,7 +726,7 @@ function ENT:BehaveUpdate() --TODO: Split this up more. Eww.
 		end
 
 		-- Recompute the path to the target every so often.
-		local repathInterval = npc_sayyid_chase_repath_interval:GetFloat()
+		local repathInterval = npc_bendang_chase_repath_interval:GetFloat()
 		if currentTime - self.LastPathRecompute > repathInterval then
 			self.LastPathRecompute = currentTime
 			self:RecomputeTargetPath()
@@ -736,14 +736,14 @@ function ENT:BehaveUpdate() --TODO: Split this up more. Eww.
 		self.MovePath:Update(self)
 
 		-- Try to jump at a target in the air.
-		if self:IsOnGround() and npc_sayyid_allow_jump:GetBool()
+		if self:IsOnGround() and npc_bendang_allow_jump:GetBool()
 			and currentTime - self.LastJumpScan >= scanInterval
 		then
 			self:AttemptJumpAtTarget()
 			self.LastJumpScan = currentTime
 		end
 	else
-		local hidingScanInterval = npc_sayyid_hiding_scan_interval:GetFloat()
+		local hidingScanInterval = npc_bendang_hiding_scan_interval:GetFloat()
 		if currentTime - self.LastHidingPlaceScan >= hidingScanInterval then
 			self.LastHidingPlaceScan = currentTime
 
@@ -753,7 +753,7 @@ function ENT:BehaveUpdate() --TODO: Split this up more. Eww.
 		end
 
 		if self.HidingSpot ~= nil then
-			local hidingInterval = npc_sayyid_hiding_repath_interval:GetFloat()
+			local hidingInterval = npc_bendang_hiding_repath_interval:GetFloat()
 			if currentTime - self.LastPathRecompute >= hidingInterval then
 				self.LastPathRecompute = currentTime
 				self.MovePath:Compute(self, self.HidingSpot.pos)
@@ -817,61 +817,50 @@ end
 
 else -- CLIENT --
 
-local MAT_sayyid = Material("npc_sayyid/sayyid")
-killicon.Add("npc_sayyid", "npc_sayyid/killicon", color_white)
-language.Add("npc_sayyid", "Saidakhrorbek Fatkhiddinkhodjaev ")
-
-net.Receive("dr_liveseyspoop", function()
-	local KartinkaStrashilka = net.ReadBool()
-	hook.Add( "HUDPaint", "PizdaNahyi", function()
-		if KartinkaStrashilka == true then
-			surface.SetDrawColor( 255, 255, 255, 255 )
-			surface.SetMaterial(Material("entities/awesome.png"))
-			surface.DrawTexturedRect(0, 0, ScrW(), ScrH())
-		end
-	end)
-end)
+local MAT_bendang = Material("npc_bendang/bendang")
+killicon.Add("npc_bendang", "npc_bendang/killicon", color_white)
+language.Add("npc_bendang", "Ben Dang ")
 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
 local developer = GetConVar("developer")
 local function DevPrint(devLevel, msg)
 	if developer:GetInt() >= devLevel then
-		print("npc_sayyid: " .. msg)
+		print("npc_bendang: " .. msg)
 	end
 end
 
 local panicMusic = nil
-local lastPanic = 0 -- The last time we were in music range of a sayyid.
+local lastPanic = 0 -- The last time we were in music range of a bendang.
 
 --TODO: Why don't these flags show up? Bug? Documentation would be lovely.
-local npc_sayyid_music_volume =
-	CreateConVar("npc_sayyid_music_volume", 1,
+local npc_bendang_music_volume =
+	CreateConVar("npc_bendang_music_volume", 1,
 	bit.bor(FCVAR_DEMO, FCVAR_ARCHIVE),
-	"Maximum music volume when being chased by sayyid. (0-1, where 0 is muted)")
+	"Maximum music volume when being chased by bendang. (0-1, where 0 is muted)")
 
--- If another sayyid comes in range before this delay is up,
+-- If another bendang comes in range before this delay is up,
 -- the music will continue where it left off.
-local MUSIC_RESTART_DELAY = 10
+local MUSIC_RESTART_DELAY = 2
 
--- Beyond this distance, sayyids do not count to music volume.
-local MUSIC_CUTOFF_DISTANCE = 2500
+-- Beyond this distance, bendangs do not count to music volume.
+local MUSIC_CUTOFF_DISTANCE = 1000
 
--- Max volume is achieved when MUSIC_sayyid_PANIC_COUNT sayyids are this close,
+-- Max volume is achieved when MUSIC_bendang_PANIC_COUNT bendangs are this close,
 -- or an equivalent score.
-local MUSIC_PANIC_DISTANCE = 500
+local MUSIC_PANIC_DISTANCE = 200
 
- -- That's a lot of sayyid.
-local MUSIC_sayyid_PANIC_COUNT = 4
+ -- That's a lot of bendang.
+local MUSIC_bendang_PANIC_COUNT = 8
 
-local MUSIC_sayyid_MAX_DISTANCE_SCORE =
-	(MUSIC_CUTOFF_DISTANCE - MUSIC_PANIC_DISTANCE) * MUSIC_sayyid_PANIC_COUNT
+local MUSIC_bendang_MAX_DISTANCE_SCORE =
+	(MUSIC_CUTOFF_DISTANCE - MUSIC_PANIC_DISTANCE) * MUSIC_bendang_PANIC_COUNT
 
 local function updatePanicMusic()
-	if #ents.FindByClass("npc_sayyid") == 0 then
+	if #ents.FindByClass("npc_bendang") == 0 then
 		-- Whoops. No need to run for now.
 		DevPrint(4, "Halting music timer.")
-		timer.Remove("sayyidPanicMusicUpdate")
+		timer.Remove("bendangPanicMusicUpdate")
 
 		if panicMusic ~= nil then
 			panicMusic:Stop()
@@ -889,7 +878,7 @@ local function updatePanicMusic()
 		end
 	end
 
-	local userVolume = math.Clamp(npc_sayyid_music_volume:GetFloat(), 0, 1)
+	local userVolume = math.Clamp(npc_bendang_music_volume:GetFloat(), 0, 1)
 	if userVolume == 0 or not IsValid(LocalPlayer()) then
 		panicMusic:Stop()
 		return
@@ -898,7 +887,7 @@ local function updatePanicMusic()
 	local totalDistanceScore = 0
 	local nearEntities = ents.FindInSphere(LocalPlayer():GetPos(), 1000)
 	for _, ent in pairs(nearEntities) do
-		if IsValid(ent) and ent:GetClass() == "npc_sayyid" then
+		if IsValid(ent) and ent:GetClass() == "npc_bendang" then
 			local distanceScore = math.max(0, MUSIC_CUTOFF_DISTANCE
 				- LocalPlayer():GetPos():Distance(ent:GetPos()))
 			totalDistanceScore = totalDistanceScore + distanceScore
@@ -906,7 +895,7 @@ local function updatePanicMusic()
 	end
 
 	local musicVolume = math.min(1,
-		totalDistanceScore / MUSIC_sayyid_MAX_DISTANCE_SCORE)
+		totalDistanceScore / MUSIC_bendang_MAX_DISTANCE_SCORE)
 
 	local shouldRestartMusic = (CurTime() - lastPanic >= MUSIC_RESTART_DELAY)
 	if musicVolume > 0 then
@@ -915,7 +904,7 @@ local function updatePanicMusic()
 		end
 
 		if not LocalPlayer():Alive() then
-			-- Quiet down so we can hear sayyid taunt us.
+			-- Quiet down so we can hear bendang taunt us.
 			musicVolume = musicVolume / 4
 		end
 
@@ -938,8 +927,8 @@ end
 
 local REPEAT_FOREVER = 0
 local function startTimer()
-	if not timer.Exists("sayyidPanicMusicUpdate") then
-		timer.Create("sayyidPanicMusicUpdate", 0.05, REPEAT_FOREVER,
+	if not timer.Exists("bendangPanicMusicUpdate") then
+		timer.Create("bendangPanicMusicUpdate", 0.05, REPEAT_FOREVER,
 			updatePanicMusic)
 		DevPrint(4, "Beginning music timer.")
 	end
@@ -958,9 +947,9 @@ end
 
 local DRAW_OFFSET = SPRITE_SIZE / 2 * vector_up
 function ENT:DrawTranslucent()
-	render.SetMaterial(MAT_sayyid)
+	render.SetMaterial(MAT_bendang)
 
-	-- Get the normal vector from sayyid to the player's eyes, and then compute
+	-- Get the normal vector from bendang to the player's eyes, and then compute
 	-- a corresponding projection onto the xy-plane.
 	local pos = self:GetPos() + DRAW_OFFSET
 	local normal = EyePos() - pos
@@ -968,7 +957,7 @@ function ENT:DrawTranslucent()
 	local xyNormal = Vector(normal.x, normal.y, 0)
 	xyNormal:Normalize()
 
-	-- sayyid should only look 1/3 of the way up to the player so that they
+	-- bendang should only look 1/3 of the way up to the player so that they
 	-- don't appear to lay flat from above.
 	local pitch = math.acos(math.Clamp(normal:Dot(xyNormal), -1, 1)) / 3
 	local cos = math.cos(pitch)
@@ -982,12 +971,12 @@ function ENT:DrawTranslucent()
 		color_white, 180)
 end
 
-surface.CreateFont("sayyidHUD", {
+surface.CreateFont("bendangHUD", {
 	font = "Arial",
 	size = 56
 })
 
-surface.CreateFont("sayyidHUDSmall", {
+surface.CreateFont("bendangHUDSmall", {
 	font = "Arial",
 	size = 24
 })
@@ -1032,19 +1021,19 @@ local flavourText = ""
 local lastBracket = 0
 local generateStart = 0
 local function navGenerateHUDOverlay()
-	draw.SimpleTextOutlined("sayyid is studying this map.", "sayyidHUD",
+	draw.SimpleTextOutlined("bendang is studying this map.", "bendangHUD",
 		ScrW() / 2, ScrH() / 2, color_white,
 		TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 2, color_black)
-	draw.SimpleTextOutlined("Please wait...", "sayyidHUD",
+	draw.SimpleTextOutlined("Please wait...", "bendangHUD",
 		ScrW() / 2, ScrH() / 2, color_white,
 		TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 2, color_black)
 
 	local elapsed = SysTime() - generateStart
 	local elapsedStr = string_ToHMS(elapsed)
-	draw.SimpleTextOutlined("Time Elapsed:", "sayyidHUDSmall",
+	draw.SimpleTextOutlined("Time Elapsed:", "bendangHUDSmall",
 		ScrW() / 2, ScrH() * 3/4, color_white,
 		TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 1, color_black)
-	draw.SimpleTextOutlined(elapsedStr, "sayyidHUDSmall",
+	draw.SimpleTextOutlined(elapsedStr, "bendangHUDSmall",
 		ScrW() / 2, ScrH() * 3/4, color_white,
 		TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 1, color_black)
 
@@ -1054,19 +1043,19 @@ local function navGenerateHUDOverlay()
 		flavourText = table.Random(flavourTexts[math.min(5, textBracket)])
 		lastBracket = textBracket
 	end
-	draw.SimpleTextOutlined(flavourText, "sayyidHUDSmall",
+	draw.SimpleTextOutlined(flavourText, "bendangHUDSmall",
 		ScrW() / 2, ScrH() * 4/5, color_yellow,
 		TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, color_black)
 end
 
-net.Receive("sayyid_navgen", function()
+net.Receive("bendang_navgen", function()
 	local startSuccess = net.ReadBool()
 	if startSuccess then
 		generateStart = SysTime()
 		lastBracket = 0
-		hook.Add("HUDPaint", "sayyidNavGenOverlay", navGenerateHUDOverlay)
+		hook.Add("HUDPaint", "bendangNavGenOverlay", navGenerateHUDOverlay)
 	else
-		Derma_Message("Oh no. sayyid doesn't even know where to start with \z
+		Derma_Message("Oh no. bendang doesn't even know where to start with \z
 		this map.\n\z
 		If you're not running the Sandbox gamemode, switch to that and try \z
 		again.", "Error!")
@@ -1076,7 +1065,7 @@ end)
 local nagMe = true
 
 local function requestNavGenerate()
-	RunConsoleCommand("npc_sayyid_learn")
+	RunConsoleCommand("npc_bendang_learn")
 end
 
 local function stopNagging()
@@ -1084,7 +1073,7 @@ local function stopNagging()
 end
 
 local function navWarning()
-	Derma_Query("It will take a while (possibly hours) for sayyid to figure \z
+	Derma_Query("It will take a while (possibly hours) for bendang to figure \z
 		this map out.\n\z
 		While he's studying it, you won't be able to play,\n\z
 		and the game will appear to have frozen/crashed.\n\z
@@ -1095,32 +1084,32 @@ local function navWarning()
 		"Not right now.", nil)
 end
 
-net.Receive("sayyid_nag", function()
+net.Receive("bendang_nag", function()
 	if not nagMe then return end
 
 	if game.SinglePlayer() then
-		Derma_Query("Uh oh! sayyid doesn't know this map.\n\z
+		Derma_Query("Uh oh! bendang doesn't know this map.\n\z
 			Would you like him to learn it?",
-			"This map is not yet sayyid-compatible!",
-			"Yes, Please", navWarning,
-			"No, Fuck off", nil,
-			"No. Don't ask again, bitch.", stopNagging)
+			"This map is not yet bendang-compatible!",
+			"Yes", navWarning,
+			"No", nil,
+			"No. Don't ask again.", stopNagging)
 	else
-		Derma_Query("Uh oh! sayyid doesn't know this map. \z
+		Derma_Query("Uh oh! bendang doesn't know this map. \z
 			He won't be able to move!\n\z
 			Because you're not in a single-player game, he isn't able to \z
 			learn it.\n\z
 			\n\z
-			Ask the server host about teaching this map to sayyid.\n\z
+			Ask the server host about teaching this map to bendang.\n\z
 			\n\z
-			If you ARE the server host, you can run npc_sayyid_learn over \z
+			If you ARE the server host, you can run npc_bendang_learn over \z
 			rcon.\n\z
 			Keep in mind that it may take hours during which you will be \z
 			unable\n\z
 			to play, and THE MAP WILL BE RESTARTED.",
-			"This map is currently not sayyid-compatible!",
+			"This map is currently not bendang-compatible!",
 			"Ok", nil,
-			"Ok. Don't say this again, bitch.", stopNagging)
+			"Ok. Don't say this again.", stopNagging)
 	end
 end)
 
@@ -1129,9 +1118,9 @@ end
 --
 -- List the NPC as spawnable.
 --
-list.Set("NPC", "npc_sayyid", {
-	Name = "Saidakhrorbek Fatkhiddinkhodjaev",
-	Class = "npc_sayyid",
+list.Set("NPC", "npc_bendang", {
+	Name = "Ben Dang",
+	Class = "npc_bendang",
 	Category = "Botsarrite",
 	AdminOnly = true
 })

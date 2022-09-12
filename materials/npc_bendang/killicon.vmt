@@ -1,0 +1,6 @@
+"UnlitGeneric"
+{
+	"$basetexture" "npc_bendang/bendang"
+	"$translucent" 1
+	"$alphatest" 1
+}
