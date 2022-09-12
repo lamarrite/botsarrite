@@ -1,0 +1,6 @@
+"UnlitGeneric"
+{
+	"$basetexture" "npc_sayyid/sayyid"
+	"$translucent" 1
+	"$alphatest" 1
+}
