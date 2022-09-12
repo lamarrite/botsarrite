@@ -1,0 +1,6 @@
+"UnlitGeneric"
+{
+	"$basetexture" "npc_gamingalan/gamingalan"
+	"$translucent" 1
+	"$alphatest" 1
+}
